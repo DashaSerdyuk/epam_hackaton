@@ -1,6 +1,7 @@
 import telebot
 import telebot.types as types
 from engine import process_engine
+from engine import get_name
 
 token = "486661624:AAGnAC3G8tPoIb3tbfogi2Ko8oLN32j_iAk"
 bot = telebot.TeleBot(token)
@@ -9,17 +10,16 @@ bot = telebot.TeleBot(token)
 def location_handler(message):
     lat = message.location.latitude
     lon = message.location.longitude
-    data_name = message.chat.first_name
     print(message)
-    msg = "{0}, your location is ({1};{2})".format(data_name, lat, lon)
+    bot.send_message(message.chat.id, "Введенный адрес: " + get_name(lat, lon), {'hide_keyboard': True})
     keyboard = types.ReplyKeyboardRemove()
-    bot.send_message(message.chat.id, msg, reply_markup=keyboard)
-    text, imagepath, newlocation = process_engine(lat, lon)
-    if imagepath != "":
-        img = open(imagepath, 'rb')
-        bot.send_photo(message.chat.id, img)
-    bot.send_message(message.chat.id, text, {'hide_keyboard': True})
-    bot.send_location(message.chat.id, newlocation[0], newlocation[1],  {'hide_keyboard': True})
+    bot.send_chat_action(message.chat.id, "typing")
+    res = process_engine(lat, lon)
+    for i in res:
+        bot.send_message(message.chat.id, get_name(i[0], i[1]), {'hide_keyboard': True})
+        bot.send_location(message.chat.id, i[0], i[1],  {'hide_keyboard': True})
+    bot.send_message(message.chat.id, 'Используй команду start для новой рекомендации.',
+                     reply_markup=keyboard)
 
 @bot.message_handler(commands=['start'])
 def start(message):
